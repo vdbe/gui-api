@@ -26,3 +26,9 @@ pub(crate) struct UpdateStateData {
     pub(crate) description: Option<String>,
     pub(crate) progress: Option<i32>,
 }
+
+#[derive(Debug)]
+pub(crate) struct SearchStateData {
+    pub(crate) name: Option<String>,
+    pub(crate) description: Option<String>,
+}

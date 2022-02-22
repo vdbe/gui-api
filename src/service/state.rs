@@ -2,9 +2,9 @@ use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::state::CreateInput,
+    dto::state::{CreateStateInput, SearchStateInput},
     error::{Error, Result},
-    model::state::{CreateStateData, State, UpdateStateData},
+    model::state::{CreateStateData, SearchStateData, State, UpdateStateData},
 };
 
 pub(crate) struct StateService;
@@ -22,7 +22,27 @@ impl StateService {
         State::find_by_name(name, pool).await
     }
 
-    pub(crate) async fn create(input: CreateInput, pool: &PgPool) -> Result<State> {
+    pub(crate) async fn list(pool: &PgPool) -> Result<Vec<State>> {
+        State::get_all(pool).await
+    }
+
+    pub(crate) async fn search(input: SearchStateInput<'_>, pool: &PgPool) -> Result<Vec<State>> {
+        let name = match input.name {
+            Some(name) => Some(format!("%{}%", name.trim().replace(" ", "%"))),
+            None => None,
+        };
+
+        let description = match input.description {
+            Some(description) => Some(format!("%{}%", description.trim().replace(" ", "%"))),
+            None => None,
+        };
+
+        let data = SearchStateData { name, description };
+
+        State::search(data, pool).await
+    }
+
+    pub(crate) async fn create(input: CreateStateInput, pool: &PgPool) -> Result<State> {
         if State::find_by_name(&input.name, pool).await.is_ok() {
             return Err(Error::DuplicateStateName);
         }
@@ -82,9 +102,5 @@ impl StateService {
         };
 
         State::update(old.id, data, pool).await
-    }
-
-    pub(crate) async fn list(pool: &PgPool) -> Result<Vec<State>> {
-        State::get_all(pool).await
     }
 }

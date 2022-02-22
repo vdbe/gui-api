@@ -3,11 +3,11 @@ use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::task::{CreateInput, TaskOutput, UpdateTaskInput},
+    dto::task::{CreateInput, SearchTaskInput, TaskOutput, UpdateTaskInput},
     error::{Error, Result},
     model::{
         state::State,
-        task::{CreateTaskData, Task, UpdateTaskData},
+        task::{CreateTaskData, SearchTaskData, Task, UpdateTaskData},
     },
 };
 
@@ -24,6 +24,46 @@ impl TaskService {
 
     pub(crate) async fn list(pool: &PgPool) -> Result<Vec<TaskOutput>> {
         TaskOutput::get_all(pool).await
+    }
+
+    pub(crate) async fn search(
+        input: SearchTaskInput<'_>,
+        pool: &PgPool,
+    ) -> Result<Vec<TaskOutput>> {
+        let progress = match input.progress {
+            Some(progress) => Some(progress.parse().map_err(|_| Error::InvalidParam)?),
+            None => None,
+        };
+
+        let title = match input.title {
+            Some(title) => Some(format!("%{}%", title.trim().replace(" ", "%"))),
+            None => None,
+        };
+
+        let description = match input.description {
+            Some(description) => Some(format!("%{}%", description.trim().replace(" ", "%"))),
+            None => None,
+        };
+
+        let created_by = match input.created_by {
+            Some(created_by) => Some(created_by.trim().to_string()),
+            None => None,
+        };
+
+        let taken_by = match input.taken_by {
+            Some(taken_by) => Some(taken_by.trim().to_string()),
+            None => None,
+        };
+
+        let data = SearchTaskData {
+            progress,
+            created_by,
+            taken_by,
+            title,
+            description,
+        };
+
+        TaskOutput::search(data, pool).await
     }
 
     pub(crate) async fn create(
@@ -50,7 +90,8 @@ impl TaskService {
             description: input.description,
         };
 
-        TaskOutput::find_by_id(Task::create(data, pool).await?.id, pool).await
+        //TaskOutput::find_by_id(Task::create(data, pool).await?.id, pool).await
+        TaskOutput::create(data, pool).await
     }
 
     pub(crate) async fn update(

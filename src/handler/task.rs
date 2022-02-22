@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use axum::{
-    extract::{Extension, Path},
+    extract::{Extension, Path, Query},
     http::StatusCode,
     routing::{get, post},
     Json, Router,
@@ -8,7 +10,7 @@ use axum::{
 use crate::{
     config::db::postgres::PgPool,
     dto::{
-        task::{CreateInput, TaskOutput, UpdateTaskInput},
+        task::{CreateInput, SearchTaskInput, TaskOutput, UpdateTaskInput},
         IdentifierPath,
     },
     error::{ApiResult, Error},
@@ -35,8 +37,34 @@ pub(crate) async fn create(
 
 pub(crate) async fn list(
     _: Claims,
+    Query(params): Query<HashMap<String, String>>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<Vec<TaskOutput>>> {
+    if !params.is_empty() {
+        let progress = params.get("progress");
+        let title = params.get("title");
+        let description = params.get("desc").or(params.get("description"));
+        let created_by = params.get("created_by");
+        let taken_by = params.get("taken_by");
+
+        if progress.is_some()
+            || title.is_some()
+            || description.is_some()
+            || created_by.is_some()
+            || taken_by.is_some()
+        {
+            let input = SearchTaskInput {
+                progress,
+                created_by,
+                taken_by,
+                title,
+                description,
+            };
+
+            return Ok(Json(TaskService::search(input, &pool).await?));
+        }
+    }
+
     Ok(Json(TaskService::list(&pool).await?))
 }
 

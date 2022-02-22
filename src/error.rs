@@ -36,8 +36,10 @@ pub enum Error {
     NoEditPermission,
     #[error("Unkown progress state")]
     ProgressStateNotFound,
-    #[error("Invalid identifier for this object")]
+    #[error("Invalid identifier for this endpoint")]
     InvalidIdentifier,
+    #[error("Invalid parameter for this endpoint")]
+    InvalidParam,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

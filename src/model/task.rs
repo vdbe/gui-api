@@ -43,3 +43,12 @@ pub(crate) struct UpdateTaskData {
     pub(crate) title: Option<String>,
     pub(crate) description: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct SearchTaskData {
+    pub(crate) progress: Option<i32>,
+    pub(crate) created_by: Option<String>,
+    pub(crate) taken_by: Option<String>,
+    pub(crate) title: Option<String>,
+    pub(crate) description: Option<String>,
+}

@@ -1,11 +1,11 @@
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{ExpressionMethods, PgTextExpressionMethods, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
     dto::IdentifierInput,
     error::Result,
-    model::state::{CreateStateData, State, UpdateStateData},
+    model::state::{CreateStateData, SearchStateData, State, UpdateStateData},
     schema::states,
 };
 
@@ -58,6 +58,21 @@ impl State {
         Ok(states::table.load(&conn)?)
     }
 
+    pub(crate) async fn search(data: SearchStateData, pool: &PgPool) -> Result<Vec<Self>> {
+        let mut query = states::table.into_boxed();
+
+        if let Some(name) = data.name {
+            query = query.filter(states::name.ilike(name));
+        };
+
+        if let Some(description) = data.description {
+            query = query.filter(states::description.ilike(description));
+        };
+
+        let conn = pool.get()?;
+        Ok(query.load(&conn)?)
+    }
+
     pub(crate) async fn create(data: CreateStateData, pool: &PgPool) -> Result<Self> {
         let conn = pool.get()?;
 
@@ -70,8 +85,8 @@ impl State {
     pub(crate) async fn update(id: Uuid, data: UpdateStateData, pool: &PgPool) -> Result<Self> {
         let conn = pool.get()?;
 
-        Ok(dbg!(diesel::update(states::table.find(id))
+        Ok(diesel::update(states::table.find(id))
             .set(&data)
-            .get_result(&conn))?)
+            .get_result(&conn)?)
     }
 }

@@ -31,3 +31,12 @@ pub(crate) struct UpdateTaskInput {
     pub(crate) title: Option<String>,
     pub(crate) description: Option<String>,
 }
+
+#[derive(Debug)]
+pub(crate) struct SearchTaskInput<'a> {
+    pub(crate) progress: Option<&'a String>,
+    pub(crate) created_by: Option<&'a String>,
+    pub(crate) taken_by: Option<&'a String>,
+    pub(crate) title: Option<&'a String>,
+    pub(crate) description: Option<&'a String>,
+}

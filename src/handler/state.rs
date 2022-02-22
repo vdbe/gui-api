@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use axum::{
-    extract::{Extension, Path},
+    extract::{Extension, Path, Query},
     http::StatusCode,
     routing::get,
     Json, Router,
@@ -7,7 +9,10 @@ use axum::{
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::{state::CreateInput, IdentifierPath},
+    dto::{
+        state::{CreateStateInput, SearchStateInput},
+        IdentifierPath,
+    },
     error::ApiResult,
     model::state::{State, UpdateStateData},
     service::StateService,
@@ -21,7 +26,7 @@ pub(crate) fn routes() -> Router {
 }
 pub(crate) async fn create(
     _: Claims,
-    Json(input): Json<CreateInput>,
+    Json(input): Json<CreateStateInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<(StatusCode, Json<State>)> {
     let state = StateService::create(input, &pool).await?;
@@ -31,9 +36,20 @@ pub(crate) async fn create(
 
 pub(crate) async fn list(
     _: Claims,
+    Query(params): Query<HashMap<String, String>>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<Vec<State>>> {
-    Ok(Json(StateService::list(&pool).await?))
+    if !params.is_empty() {
+        let name = params.get("name");
+        let description = params.get("desc").or(params.get("description"));
+
+        if name.is_some() || description.is_some() {
+            let input = SearchStateInput { name, description };
+            return Ok(Json(StateService::search(input, &pool).await?));
+        }
+    }
+
+    return Ok(Json(StateService::list(&pool).await?));
 }
 
 pub(crate) async fn find_by(

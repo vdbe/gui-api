@@ -16,6 +16,24 @@ mod state;
 mod task;
 
 impl User {
+    pub(crate) async fn find_id_by_email(email: &str, pool: &PgPool) -> Result<Uuid> {
+        let conn = pool.get()?;
+
+        Ok(users::table
+            .select(users::id)
+            .filter(users::email.eq(email))
+            .first(&conn)?)
+    }
+
+    pub(crate) async fn find_id_by_name(name: &str, pool: &PgPool) -> Result<Uuid> {
+        let conn = pool.get()?;
+
+        Ok(users::table
+            .select(users::id)
+            .filter(users::name.eq(name))
+            .first(&conn)?)
+    }
+
     pub(crate) async fn find_by_id(id: Uuid, pool: &PgPool) -> Result<Self> {
         let conn = pool.get()?;
 
