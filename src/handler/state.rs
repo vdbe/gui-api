@@ -1,13 +1,13 @@
 use axum::{
     extract::{Extension, Path},
     http::StatusCode,
-    routing::{get, post},
+    routing::get,
     Json, Router,
 };
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::state::{CreateInput, IdentifierInput},
+    dto::{state::CreateInput, IdentifierPath},
     error::ApiResult,
     model::state::{State, UpdateStateData},
     service::StateService,
@@ -38,15 +38,12 @@ pub(crate) async fn list(
 
 pub(crate) async fn find_by(
     _: Claims,
-    Path(identifier): Path<IdentifierInput>,
+    Path(identifier): Path<IdentifierPath>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<State>> {
     let state = match identifier {
-        IdentifierInput::Progress(p) => StateService::find_by_progress(p, &pool).await?,
-        IdentifierInput::Name(n) => StateService::find_by_name(&n, &pool).await?,
-        IdentifierInput::Id(_) => {
-            unreachable!("Deserialize is only implmented for `Progress` and `Name`")
-        }
+        IdentifierPath::Integer(p) => StateService::find_by_progress(p, &pool).await?,
+        IdentifierPath::Text(n) => StateService::find_by_name(&n, &pool).await?,
     };
 
     Ok(Json(state))
@@ -54,16 +51,13 @@ pub(crate) async fn find_by(
 
 pub(crate) async fn update(
     _: Claims,
-    Path(identifier): Path<IdentifierInput>,
+    Path(identifier): Path<IdentifierPath>,
     Json(input): Json<UpdateStateData>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<State>> {
     let state = match identifier {
-        IdentifierInput::Progress(p) => StateService::find_by_progress(p, &pool).await?,
-        IdentifierInput::Name(n) => StateService::find_by_name(&n, &pool).await?,
-        IdentifierInput::Id(_) => {
-            unreachable!("Deserialize is only implmented for `Progress` and `Name`")
-        }
+        IdentifierPath::Integer(p) => StateService::find_by_progress(p, &pool).await?,
+        IdentifierPath::Text(n) => StateService::find_by_name(&n, &pool).await?,
     };
 
     Ok(Json(StateService::update(state, input, &pool).await?))

@@ -1,22 +1,33 @@
 use std::time::SystemTime;
 
-use crate::dto::state::IdentifierInput as StateIdentifierInput;
+use crate::{dto::IdentifierInput, util::epoch};
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct CreateInput {
-    pub(crate) state: StateIdentifierInput,
+    pub(crate) state: IdentifierInput,
+    pub(crate) title: String,
+    pub(crate) description: String,
+}
+
+#[derive(Debug, Serialize, Queryable)]
+pub(crate) struct TaskOutput {
+    pub(crate) nr: i32,
+    pub(crate) progress: i32,
+    pub(crate) created_by: String,
+    pub(crate) taken_by: Option<String>,
+    #[serde(serialize_with = "epoch::system_time")]
+    pub(crate) created_at: SystemTime,
+    #[serde(serialize_with = "epoch::option_system_time")]
+    pub(crate) taken_at: Option<SystemTime>,
+    #[serde(serialize_with = "epoch::option_system_time")]
+    pub(crate) completed_at: Option<SystemTime>,
     pub(crate) title: String,
     pub(crate) description: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct Output {
-    pub(crate) progress: i32,
-    pub(crate) create_by: String,
-    pub(crate) taken_by: Option<String>,
-    pub(crate) created_at: SystemTime,
-    pub(crate) taken_at: Option<SystemTime>,
-    pub(crate) completed_at: Option<SystemTime>,
-    pub(crate) title: String,
-    pub(crate) description: String,
+pub(crate) struct UpdateTaskInput {
+    pub(crate) progress: Option<i32>,
+    pub(crate) title: Option<String>,
+    pub(crate) description: Option<String>,
 }

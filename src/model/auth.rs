@@ -18,5 +18,5 @@ pub(crate) struct UpdateUserData {
     pub(crate) name: Option<String>,
     pub(crate) email: Option<String>,
     pub(crate) password: Option<String>,
-    pub(crate) updated_at: SystemTime,
+    pub(crate) updated_at: Option<SystemTime>,
 }

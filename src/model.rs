@@ -2,6 +2,8 @@ use std::time::SystemTime;
 
 use uuid::Uuid;
 
+use crate::util::epoch;
+
 pub(crate) mod auth;
 pub(crate) mod health;
 pub(crate) mod state;
@@ -15,8 +17,8 @@ pub struct User {
     pub(crate) email: String,
     #[serde(skip_serializing)]
     pub(crate) password: String,
-    #[serde(skip_serializing)]
+    #[serde(serialize_with = "epoch::system_time")]
     pub(crate) created_at: SystemTime,
-    #[serde(skip_serializing)]
+    #[serde(serialize_with = "epoch::system_time")]
     pub(crate) updated_at: SystemTime,
 }

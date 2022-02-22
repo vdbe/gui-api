@@ -2,7 +2,7 @@ table! {
     states (id) {
         id -> Uuid,
         name -> Varchar,
-        description -> Varchar,
+        description -> Text,
         progress -> Int4,
     }
 }
@@ -10,6 +10,7 @@ table! {
 table! {
     tasks (id) {
         id -> Uuid,
+        nr -> Int4,
         state -> Uuid,
         created_by -> Uuid,
         taken_by -> Nullable<Uuid>,
@@ -18,7 +19,7 @@ table! {
         taken_at -> Nullable<Timestamp>,
         completed_at -> Nullable<Timestamp>,
         title -> Varchar,
-        description -> Varchar,
+        description -> Text,
     }
 }
 

@@ -8,7 +8,7 @@ use axum::{
 use crate::{
     config::{constant::BEARER, db::postgres::PgPool},
     dto::{
-        auth::{LoginInput, RegisterInput, UpdateInput},
+        auth::{LoginUserInput, RegisterUserInput, UpdateUserInput},
         TokenPayload,
     },
     error::{ApiResult, Error},
@@ -38,7 +38,7 @@ pub(crate) async fn claims(claims: Claims) -> ApiResult<Json<Claims>> {
 }
 
 pub(crate) async fn login(
-    Json(input): Json<LoginInput>,
+    Json(input): Json<LoginUserInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<TokenPayload>> {
     validate_payload(&input)?;
@@ -55,7 +55,7 @@ pub(crate) async fn login(
 }
 
 pub(crate) async fn register(
-    Json(input): Json<RegisterInput>,
+    Json(input): Json<RegisterUserInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<(StatusCode, Json<TokenPayload>)> {
     validate_payload(&input)?;
@@ -74,7 +74,7 @@ pub(crate) async fn register(
 
 pub(crate) async fn update(
     user: User,
-    Json(input): Json<UpdateInput>,
+    Json(input): Json<UpdateUserInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<TokenPayload>> {
     validate_payload(&input)?;

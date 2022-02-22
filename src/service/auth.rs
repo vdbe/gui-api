@@ -2,7 +2,7 @@ use time::OffsetDateTime;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::auth::{LoginInput, RegisterInput, UpdateInput},
+    dto::auth::{LoginUserInput, RegisterUserInput, UpdateUserInput},
     error::{Error, Result},
     model::{
         auth::{CreateUserData, UpdateUserData},
@@ -14,7 +14,7 @@ use crate::{
 pub(crate) struct AuthService;
 
 impl AuthService {
-    pub(crate) async fn sign_in(input: LoginInput, pool: &PgPool) -> Result<User> {
+    pub(crate) async fn sign_in(input: LoginUserInput, pool: &PgPool) -> Result<User> {
         let user = User::find_by_email(&input.email, pool).await?;
 
         if encryption::verify_password(input.password, user.password.to_owned()).await? {
@@ -24,7 +24,7 @@ impl AuthService {
         }
     }
 
-    pub(crate) async fn sign_up(input: RegisterInput, pool: &PgPool) -> Result<User> {
+    pub(crate) async fn sign_up(input: RegisterUserInput, pool: &PgPool) -> Result<User> {
         if User::find_by_name(&input.name, pool).await.is_ok() {
             return Err(Error::DuplicateUserName);
         }
@@ -46,14 +46,14 @@ impl AuthService {
         User::create(data, pool).await
     }
 
-    pub(crate) async fn update(old: User, input: UpdateInput, pool: &PgPool) -> Result<User> {
+    pub(crate) async fn update(old: User, input: UpdateUserInput, pool: &PgPool) -> Result<User> {
         let new_password = match input.new_password {
             Some(new_password) if new_password != input.password => Some(new_password),
             Some(_) => None,
             None => None,
         };
 
-        if !encryption::verify_password(input.password, old.password).await? {
+        if !encryption::verify_password(input.password, old.password.clone()).await? {
             return Err(Error::WrongPassword);
         }
 
@@ -81,6 +81,10 @@ impl AuthService {
             None => None,
         };
 
+        if new_password.is_none() && name.is_none() && email.is_none() {
+            return Ok(old);
+        }
+
         let password = match new_password {
             Some(password) => Some(encryption::hash_password(password).await?),
             None => None,
@@ -90,7 +94,7 @@ impl AuthService {
             name,
             email,
             password,
-            updated_at: OffsetDateTime::now_utc().into(),
+            updated_at: Some(OffsetDateTime::now_utc().into()),
         };
 
         User::update(old.id, data, pool).await

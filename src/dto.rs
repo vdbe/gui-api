@@ -1,3 +1,6 @@
+use serde::de::{self, Deserialize, Deserializer};
+use uuid::Uuid;
+
 pub(crate) mod auth;
 pub(crate) mod state;
 pub(crate) mod task;
@@ -6,4 +9,61 @@ pub(crate) mod task;
 pub(crate) struct TokenPayload {
     pub(crate) access_token: String,
     pub(crate) token_type: String,
+}
+
+#[derive(Debug)]
+pub(crate) enum IdentifierInput {
+    Integer(i32),
+    Text(String),
+    Id(Uuid),
+}
+
+#[derive(Debug)]
+pub(crate) enum IdentifierPath {
+    Integer(i32),
+    Text(String),
+}
+
+impl<'de> Deserialize<'de> for IdentifierInput {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let input: serde_json::value::Value = Deserialize::deserialize(deserializer)?;
+
+        let identifier = match input {
+            serde_json::Value::Number(number) => {
+                let x = match i32::try_from(
+                    number
+                        .as_i64()
+                        .ok_or_else(|| de::Error::custom("progress not a i32"))?,
+                ) {
+                    Ok(n) => n,
+                    Err(_) => return Err(de::Error::custom("progress not an i32")),
+                };
+
+                Self::Integer(x)
+            }
+            serde_json::Value::String(name) => Self::Text(name),
+            _ => return Err(de::Error::custom("Invalid type")),
+        };
+
+        Ok(identifier)
+    }
+}
+
+impl<'de> Deserialize<'de> for IdentifierPath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let input: String = Deserialize::deserialize(deserializer)?;
+
+        let identifier: Self = match input.parse::<i32>() {
+            Ok(num) => Self::Integer(num),
+            Err(_) => Self::Text(input),
+        };
+
+        Ok(identifier)
+    }
 }

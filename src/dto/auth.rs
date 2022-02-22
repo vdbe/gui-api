@@ -1,14 +1,14 @@
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
-pub(crate) struct LoginInput {
+pub(crate) struct LoginUserInput {
     #[validate(email)]
     pub(crate) email: String,
     pub(crate) password: String,
 }
 
 #[derive(Debug, Deserialize, Validate)]
-pub(crate) struct RegisterInput {
+pub(crate) struct RegisterUserInput {
     #[validate(length(min = 4, max = 10))]
     pub(crate) name: String,
     #[validate(email)]
@@ -18,7 +18,7 @@ pub(crate) struct RegisterInput {
 }
 
 #[derive(Debug, Deserialize, Validate)]
-pub(crate) struct UpdateInput {
+pub(crate) struct UpdateUserInput {
     #[validate(length(min = 6))]
     pub(crate) password: String,
     #[validate(length(min = 4, max = 10))]

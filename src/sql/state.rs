@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::state::IdentifierInput,
+    dto::IdentifierInput,
     error::Result,
     model::state::{CreateStateData, State, UpdateStateData},
     schema::states,
@@ -31,18 +31,22 @@ impl State {
     }
 
     pub(crate) async fn find_id(identifier: IdentifierInput, pool: &PgPool) -> Result<Uuid> {
+        if let IdentifierInput::Id(id) = identifier {
+            return Ok(id);
+        };
+
         let conn = pool.get()?;
 
         let id = match identifier {
-            IdentifierInput::Progress(p) => states::table
+            IdentifierInput::Integer(p) => states::table
                 .select(states::id)
                 .filter(states::progress.eq(p))
                 .first(&conn)?,
-            IdentifierInput::Name(n) => states::table
+            IdentifierInput::Text(n) => states::table
                 .select(states::id)
                 .filter(states::name.eq(n))
                 .first(&conn)?,
-            IdentifierInput::Id(id) => id,
+            IdentifierInput::Id(_) => unreachable!(),
         };
 
         Ok(id)
@@ -66,8 +70,8 @@ impl State {
     pub(crate) async fn update(id: Uuid, data: UpdateStateData, pool: &PgPool) -> Result<Self> {
         let conn = pool.get()?;
 
-        Ok(diesel::update(states::table.find(id))
+        Ok(dbg!(diesel::update(states::table.find(id))
             .set(&data)
-            .get_result(&conn)?)
+            .get_result(&conn))?)
     }
 }

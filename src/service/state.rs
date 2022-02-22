@@ -53,6 +53,12 @@ impl StateService {
             None => None,
         };
 
+        let description = match input.description {
+            Some(description) if description != old.description => Some(description),
+            Some(_) => None,
+            None => None,
+        };
+
         let progress = match input.progress {
             Some(progress) if progress != old.progress => {
                 if State::find_by_progress(progress, pool).await.is_ok() {
@@ -65,15 +71,13 @@ impl StateService {
             None => None,
         };
 
-        let new_description = match input.description {
-            Some(desc) if desc != old.description => Some(desc),
-            Some(_) => None,
-            None => None,
-        };
+        if name.is_none() && description.is_none() && progress.is_none() {
+            return Ok(old);
+        }
 
         let data = UpdateStateData {
             name,
-            description: new_description,
+            description,
             progress,
         };
 

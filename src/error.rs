@@ -32,6 +32,12 @@ pub enum Error {
     DuplicateStateName,
     #[error("progress is already exists")]
     DuplicateStateProgress,
+    #[error("you don't have the permission to edit this item")]
+    NoEditPermission,
+    #[error("Unkown progress state")]
+    ProgressStateNotFound,
+    #[error("Invalid identifier for this object")]
+    InvalidIdentifier,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -44,6 +50,9 @@ impl From<Error> for ApiError {
         dbg!(&err);
         let status = match err {
             Error::WrongCredentials => StatusCode::UNAUTHORIZED,
+            Error::NoEditPermission => StatusCode::FORBIDDEN,
+            Error::ProgressStateNotFound => StatusCode::BAD_REQUEST,
+            Error::InvalidIdentifier => StatusCode::BAD_REQUEST,
             Error::Validation(_) => StatusCode::BAD_REQUEST,
             Error::AxumTypedHeader(_) => StatusCode::BAD_REQUEST,
             Error::Jwt(ref err) => match err.kind() {
