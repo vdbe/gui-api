@@ -41,7 +41,7 @@ pub(crate) async fn list(
 ) -> ApiResult<Json<Vec<State>>> {
     if !params.is_empty() {
         let name = params.get("name");
-        let description = params.get("desc").or(params.get("description"));
+        let description = params.get("desc").or_else(|| params.get("description"));
 
         if name.is_some() || description.is_some() {
             let input = SearchStateInput { name, description };

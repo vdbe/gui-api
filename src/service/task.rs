@@ -3,7 +3,10 @@ use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::task::{CreateInput, SearchTaskInput, TaskOutput, UpdateTaskInput},
+    dto::{
+        task::{CreateInput, SearchTaskInput, TaskOutput, UpdateTaskInput},
+        IdentifierInput,
+    },
     error::{Error, Result},
     model::{
         state::State,
@@ -22,6 +25,10 @@ impl TaskService {
         TaskOutput::find_by_nr(nr, pool).await
     }
 
+    pub(crate) async fn get_state(_identifier: IdentifierInput, _pool: &PgPool) -> Result<State> {
+        todo!("Wating for a Task::get_state(Task, &PgPool)")
+    }
+
     pub(crate) async fn list(pool: &PgPool) -> Result<Vec<TaskOutput>> {
         TaskOutput::get_all(pool).await
     }
@@ -35,25 +42,19 @@ impl TaskService {
             None => None,
         };
 
-        let title = match input.title {
-            Some(title) => Some(format!("%{}%", title.trim().replace(" ", "%"))),
-            None => None,
-        };
+        let title = input
+            .title
+            .map(|title| format!("%{}%", title.trim().replace(' ', "%")));
 
-        let description = match input.description {
-            Some(description) => Some(format!("%{}%", description.trim().replace(" ", "%"))),
-            None => None,
-        };
+        let description = input
+            .description
+            .map(|description| format!("%{}%", description.trim().replace(' ', "%")));
 
-        let created_by = match input.created_by {
-            Some(created_by) => Some(created_by.trim().to_string()),
-            None => None,
-        };
+        let created_by = input
+            .created_by
+            .map(|created_by| created_by.trim().to_string());
 
-        let taken_by = match input.taken_by {
-            Some(taken_by) => Some(taken_by.trim().to_string()),
-            None => None,
-        };
+        let taken_by = input.taken_by.map(|taken_by| taken_by.trim().to_string());
 
         let data = SearchTaskData {
             progress,
@@ -90,7 +91,6 @@ impl TaskService {
             description: input.description,
         };
 
-        //TaskOutput::find_by_id(Task::create(data, pool).await?.id, pool).await
         TaskOutput::create(data, pool).await
     }
 
@@ -140,5 +140,44 @@ impl TaskService {
         };
 
         TaskOutput::update(old.id, data, pool).await
+    }
+
+    // TODO: Write a `Task::update_state` for this
+    pub(crate) async fn update_state(
+        task: Task,
+        state_identifier: IdentifierInput,
+        by: Uuid,
+        pool: &PgPool,
+    ) -> Result<State> {
+        let taken_by = if task.created_by == by {
+            None
+        } else if let Some(id) = task.taken_by {
+            if id != by {
+                return Err(Error::NoEditPermission);
+            }
+
+            None
+        } else {
+            Some(by)
+        };
+
+        let state = State::find(state_identifier, pool).await?;
+
+        if state.id != task.state {
+            let data = UpdateTaskData {
+                state: Some(state.id),
+                created_by: None,
+                taken_by,
+                created_at: None,
+                updated_at: Some(OffsetDateTime::now_utc().into()),
+                taken_at: None,
+                completed_at: None,
+                title: None,
+                description: None,
+            };
+
+            Task::update(task.id, data, pool).await?;
+        }
+        Ok(state)
     }
 }

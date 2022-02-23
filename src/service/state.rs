@@ -27,15 +27,13 @@ impl StateService {
     }
 
     pub(crate) async fn search(input: SearchStateInput<'_>, pool: &PgPool) -> Result<Vec<State>> {
-        let name = match input.name {
-            Some(name) => Some(format!("%{}%", name.trim().replace(" ", "%"))),
-            None => None,
-        };
+        let name = input
+            .name
+            .map(|name| format!("%{}%", name.trim().replace(' ', "%")));
 
-        let description = match input.description {
-            Some(description) => Some(format!("%{}%", description.trim().replace(" ", "%"))),
-            None => None,
-        };
+        let description = input
+            .description
+            .map(|description| format!("%{}%", description.trim().replace(' ', "%")));
 
         let data = SearchStateData { name, description };
 

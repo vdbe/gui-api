@@ -24,6 +24,15 @@ pub(crate) enum IdentifierPath {
     Text(String),
 }
 
+impl From<IdentifierPath> for IdentifierInput {
+    fn from(identifier: IdentifierPath) -> Self {
+        match identifier {
+            IdentifierPath::Integer(integer) => Self::Integer(integer),
+            IdentifierPath::Text(text) => Self::Text(text),
+        }
+    }
+}
+
 impl<'de> Deserialize<'de> for IdentifierInput {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

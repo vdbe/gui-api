@@ -8,11 +8,7 @@ use crate::{
     config::db::postgres::PgPool,
     dto::task::TaskOutput,
     error::Result,
-    model::{
-        state::State,
-        task::{CreateTaskData, SearchTaskData, Task, UpdateTaskData},
-        User,
-    },
+    model::task::{CreateTaskData, SearchTaskData, Task, UpdateTaskData},
     schema::{states, tasks, users},
 };
 

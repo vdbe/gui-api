@@ -30,6 +30,14 @@ impl State {
             .first(&conn)?)
     }
 
+    pub(crate) async fn find(identifier: IdentifierInput, pool: &PgPool) -> Result<Self> {
+        Ok(match identifier {
+            IdentifierInput::Integer(progress) => Self::find_by_progress(progress, pool).await?,
+            IdentifierInput::Text(ref name) => Self::find_by_name(name, pool).await?,
+            IdentifierInput::Id(id) => Self::find_by_id(id, pool).await?,
+        })
+    }
+
     pub(crate) async fn find_id(identifier: IdentifierInput, pool: &PgPool) -> Result<Uuid> {
         if let IdentifierInput::Id(id) = identifier {
             return Ok(id);

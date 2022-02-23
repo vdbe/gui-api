@@ -11,6 +11,8 @@ pub enum Error {
     #[error(transparent)]
     AxumTypedHeader(#[from] axum::extract::rejection::TypedHeaderRejection),
     #[error(transparent)]
+    AxumPath(#[from] axum::extract::rejection::PathRejection),
+    #[error(transparent)]
     DieselResult(#[from] diesel::result::Error),
     #[error(transparent)]
     Jwt(#[from] jsonwebtoken::errors::Error),
