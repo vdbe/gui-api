@@ -42,6 +42,8 @@ pub enum Error {
     InvalidIdentifier,
     #[error("Invalid parameter for this endpoint")]
     InvalidParam,
+    #[error("Refresh token expired, you need to login again")]
+    RefreshTokenExpired,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -57,6 +59,7 @@ impl From<Error> for ApiError {
             Error::NoEditPermission => StatusCode::FORBIDDEN,
             Error::ProgressStateNotFound => StatusCode::BAD_REQUEST,
             Error::InvalidIdentifier => StatusCode::BAD_REQUEST,
+            Error::RefreshTokenExpired => StatusCode::FORBIDDEN,
             Error::Validation(_) => StatusCode::BAD_REQUEST,
             Error::AxumTypedHeader(_) => StatusCode::BAD_REQUEST,
             Error::Jwt(ref err) => match err.kind() {
@@ -82,6 +85,7 @@ impl From<Error> for ApiError {
             },
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
+
         let payload = json!({"message": err.to_string()});
         (status, Json(payload))
     }

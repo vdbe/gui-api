@@ -1,4 +1,13 @@
 table! {
+    refreshtokens (id) {
+        id -> Uuid,
+        token -> Uuid,
+        user_id -> Uuid,
+        expiry_date -> Timestamp,
+    }
+}
+
+table! {
     states (id) {
         id -> Uuid,
         name -> Varchar,
@@ -34,9 +43,11 @@ table! {
     }
 }
 
+joinable!(refreshtokens -> users (user_id));
 joinable!(tasks -> states (state));
 
 allow_tables_to_appear_in_same_query!(
+    refreshtokens,
     states,
     tasks,
     users,

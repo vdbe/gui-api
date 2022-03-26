@@ -1,11 +1,14 @@
+use std::time::SystemTime;
+
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
-    dto::auth::{LoginUserInput, RegisterUserInput, UpdateUserInput},
+    dto::auth::{LoginUserInput, RefreshTokenInput, RegisterUserInput, UpdateUserInput},
     error::{Error, Result},
     model::{
-        auth::{CreateUserData, UpdateUserData},
+        auth::{CreateRefreshTokenData, CreateUserData, RefreshToken, UpdateUserData},
         User,
     },
     util::encryption,
@@ -14,6 +17,31 @@ use crate::{
 pub(crate) struct AuthService;
 
 impl AuthService {
+    const REFRESH_TOKEN_TIMEOUT: u64 = 30 * 24 * 60 * 60;
+
+    pub(crate) async fn create_refresh_token(user_id: Uuid, pool: &PgPool) -> Result<RefreshToken> {
+        let data = CreateRefreshTokenData {
+            user_id,
+            expiry_date: SystemTime::now()
+                + std::time::Duration::from_secs(Self::REFRESH_TOKEN_TIMEOUT),
+        };
+
+        RefreshToken::create(data, pool).await
+    }
+
+    pub(crate) async fn refresh_access_token(
+        input: RefreshTokenInput,
+        pool: &PgPool,
+    ) -> Result<User> {
+        let refresh_token = RefreshToken::find_by_token(input.token, pool).await?;
+
+        if refresh_token.expiry_date < SystemTime::now() {
+            return Err(Error::RefreshTokenExpired);
+        }
+
+        User::find_by_id(refresh_token.user_id, pool).await
+    }
+
     pub(crate) async fn sign_in(input: LoginUserInput, pool: &PgPool) -> Result<User> {
         let user = User::find_by_email(&input.email, pool).await?;
 
@@ -22,6 +50,11 @@ impl AuthService {
         } else {
             Err(Error::WrongPassword)
         }
+    }
+
+    pub(crate) async fn sign_out(input: RefreshTokenInput, pool: &PgPool) -> Result<()> {
+        // NOTE: Maybe an error if the refreshtoken did not exist
+        RefreshToken::drop_by_token(input.token, pool).await
     }
 
     pub(crate) async fn sign_up(input: RegisterUserInput, pool: &PgPool) -> Result<User> {

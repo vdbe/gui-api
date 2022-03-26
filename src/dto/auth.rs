@@ -1,3 +1,4 @@
+use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
@@ -27,4 +28,10 @@ pub(crate) struct UpdateUserInput {
     pub(crate) email: Option<String>,
     #[validate(length(min = 6))]
     pub(crate) new_password: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub(crate) struct RefreshTokenInput {
+    #[serde(rename = "refresh_token")]
+    pub(crate) token: Uuid,
 }

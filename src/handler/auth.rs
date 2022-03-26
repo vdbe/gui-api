@@ -8,8 +8,8 @@ use axum::{
 use crate::{
     config::{constant::BEARER, db::postgres::PgPool},
     dto::{
-        auth::{LoginUserInput, RegisterUserInput, UpdateUserInput},
-        TokenPayload,
+        auth::{LoginUserInput, RefreshTokenInput, RegisterUserInput, UpdateUserInput},
+        LoginPayload, RefreshPayload,
     },
     error::{ApiResult, Error},
     model::User,
@@ -22,8 +22,10 @@ use crate::{
 
 pub(crate) fn routes() -> Router {
     Router::new()
-        .route("/login", post(login))
         .route("/register", post(register))
+        .route("/login", post(login))
+        .route("/logout", post(logout))
+        .route("/token", post(token))
         .route("/update", patch(update))
         .route("/authorize", get(authorize))
         .route("/claims", get(claims))
@@ -40,34 +42,49 @@ pub(crate) async fn claims(claims: Claims) -> ApiResult<Json<Claims>> {
 pub(crate) async fn login(
     Json(input): Json<LoginUserInput>,
     Extension(pool): Extension<PgPool>,
-) -> ApiResult<Json<TokenPayload>> {
+) -> ApiResult<Json<LoginPayload>> {
     validate_payload(&input)?;
 
     let user = AuthService::sign_in(input, &pool)
         .await
         .map_err(|_| Error::WrongCredentials)?;
     let token = jwt::sign(user.id)?;
+    let refresh_token = AuthService::create_refresh_token(user.id, &pool).await?;
 
-    Ok(Json(TokenPayload {
-        access_token: token,
-        token_type: BEARER.to_string(),
+    Ok(Json(LoginPayload {
+        refresh_token,
+        access_token: RefreshPayload {
+            access_token: token,
+            token_type: BEARER.to_string(),
+        },
     }))
+}
+
+pub(crate) async fn logout(
+    Json(input): Json<RefreshTokenInput>,
+    Extension(pool): Extension<PgPool>,
+) -> ApiResult<()> {
+    Ok(AuthService::sign_out(input, &pool).await?)
 }
 
 pub(crate) async fn register(
     Json(input): Json<RegisterUserInput>,
     Extension(pool): Extension<PgPool>,
-) -> ApiResult<(StatusCode, Json<TokenPayload>)> {
+) -> ApiResult<(StatusCode, Json<LoginPayload>)> {
     validate_payload(&input)?;
 
     let user = AuthService::sign_up(input, &pool).await?;
     let token = jwt::sign(user.id)?;
+    let refresh_token = AuthService::create_refresh_token(user.id, &pool).await?;
 
     Ok((
         StatusCode::CREATED,
-        Json(TokenPayload {
-            access_token: token,
-            token_type: BEARER.to_string(),
+        Json(LoginPayload {
+            refresh_token,
+            access_token: RefreshPayload {
+                access_token: token,
+                token_type: BEARER.to_string(),
+            },
         }),
     ))
 }
@@ -76,13 +93,27 @@ pub(crate) async fn update(
     user: User,
     Json(input): Json<UpdateUserInput>,
     Extension(pool): Extension<PgPool>,
-) -> ApiResult<Json<TokenPayload>> {
+) -> ApiResult<Json<RefreshPayload>> {
     validate_payload(&input)?;
 
     let user = AuthService::update(user, input, &pool).await?;
     let token = jwt::sign(user.id)?;
 
-    Ok(Json(TokenPayload {
+    // TODO: Integrate with refresh tokens
+    Ok(Json(RefreshPayload {
+        access_token: token,
+        token_type: BEARER.to_string(),
+    }))
+}
+
+pub(crate) async fn token(
+    Json(input): Json<RefreshTokenInput>,
+    Extension(pool): Extension<PgPool>,
+) -> ApiResult<Json<RefreshPayload>> {
+    let user = AuthService::refresh_access_token(input, &pool).await?;
+    let token = jwt::sign(user.id)?;
+
+    Ok(Json(RefreshPayload {
         access_token: token,
         token_type: BEARER.to_string(),
     }))

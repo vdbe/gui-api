@@ -1,14 +1,24 @@
 use serde::de::{self, Deserialize, Deserializer};
 use uuid::Uuid;
 
+use crate::model::auth::RefreshToken;
+
 pub(crate) mod auth;
 pub(crate) mod state;
 pub(crate) mod task;
 
 #[derive(Debug, Serialize)]
-pub(crate) struct TokenPayload {
+pub(crate) struct RefreshPayload {
     pub(crate) access_token: String,
     pub(crate) token_type: String,
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct LoginPayload {
+    #[serde(flatten)]
+    pub(crate) refresh_token: RefreshToken,
+    #[serde(flatten)]
+    pub(crate) access_token: RefreshPayload,
 }
 
 #[derive(Debug)]

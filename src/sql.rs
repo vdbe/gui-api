@@ -11,6 +11,7 @@ use crate::{
     schema::users,
 };
 
+mod auth;
 mod health;
 mod state;
 mod task;
