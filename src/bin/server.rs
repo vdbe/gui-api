@@ -30,7 +30,7 @@ async fn main() {
 
     // Run it
     let addr = SocketAddr::from((args.host, args.port));
-    tracing::debug!("listening on {addr}");
+    tracing::info!("listening on {addr}");
     let server = axum::Server::bind(&addr).serve(app(pg_pool.clone()).into_make_service());
 
     if let Err(err) = server.await {
