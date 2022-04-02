@@ -10,7 +10,7 @@ fn argon2_config<'a>() -> argon2::Config<'a> {
         hash_length: 32,
         lanes: 4,
         mem_cost: 16 * 1024,
-        time_cost: 32,
+        time_cost: 4,
         ..Default::default()
     }
 }

@@ -3,7 +3,10 @@ use std::net::{IpAddr, SocketAddr};
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
-use tasks::config::db::{postgres::PgPool, DbPool};
+use gui_api::{
+    app,
+    config::db::{postgres::PgPool, DbPool},
+};
 
 #[derive(Debug, Parser)]
 pub struct Config {
@@ -28,7 +31,7 @@ async fn main() {
     // Run it
     let addr = SocketAddr::from((args.host, args.port));
     tracing::debug!("listening on {addr}");
-    let server = axum::Server::bind(&addr).serve(tasks::app(pg_pool.clone()).into_make_service());
+    let server = axum::Server::bind(&addr).serve(app(pg_pool.clone()).into_make_service());
 
     if let Err(err) = server.await {
         tracing::error!("server error: {:?}", err);
