@@ -1,4 +1,7 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    env,
+    net::{IpAddr, SocketAddr},
+};
 
 use clap::Parser;
 use tracing_subscriber::EnvFilter;
@@ -18,9 +21,12 @@ pub struct Config {
 
 #[tokio::main]
 async fn main() {
+    #[cfg(debug_assertions)]
     dotenv::dotenv().ok();
 
     let args = Config::parse();
+
+    _ = env::var("JWT_SECRET").expect("environment variable `JWT_SECRET` must be set");
 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
