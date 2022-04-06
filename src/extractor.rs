@@ -23,7 +23,7 @@ where
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
-                .map_err(Error::from)?;
+                .map_err(|err| Error::MissingBearer(err))?;
         let Extension(pool) = Extension::<PgPool>::from_request(req)
             .await
             .map_err(Error::from)?;
@@ -65,7 +65,7 @@ where
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
-                .map_err(Error::from)?;
+                .map_err(|err| Error::MissingBearer(err))?;
         let claims = jwt::verify(bearer.token())?;
         Ok(claims)
     }

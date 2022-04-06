@@ -22,6 +22,8 @@ pub enum Error {
     TokioRecv(#[from] tokio::sync::oneshot::error::RecvError),
     #[error(transparent)]
     Validation(#[from] validator::ValidationErrors),
+    #[error(transparent)]
+    MissingBearer(axum::extract::rejection::TypedHeaderRejection),
     #[error("wrong credentials")]
     WrongCredentials,
     #[error("password doesn't match")]
@@ -54,7 +56,15 @@ pub type ApiResult<T> = std::result::Result<T, ApiError>;
 impl From<Error> for ApiError {
     fn from(err: Error) -> Self {
         dbg!(&err);
+        if let Error::AxumTypedHeader(ref err) = &err {
+            dbg!(err.name());
+            if err.name() == "authorization" {
+                dbg!("asdf");
+            }
+        }
+
         let status = match err {
+            Error::MissingBearer(_) => StatusCode::UNAUTHORIZED,
             Error::WrongCredentials => StatusCode::UNAUTHORIZED,
             Error::NoEditPermission => StatusCode::FORBIDDEN,
             Error::ProgressStateNotFound => StatusCode::BAD_REQUEST,
