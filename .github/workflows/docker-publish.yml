@@ -107,4 +107,4 @@ jobs:
         # against the sigstore community Fulcio instance.
         run: |
           cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
-          cosign sign ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
+          cosign sign ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name  }}@${{ steps.build-and-push.outputs.digest }}
