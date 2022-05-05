@@ -4,6 +4,7 @@ use std::{
 };
 
 use clap::Parser;
+use tokio::signal;
 use tracing_subscriber::EnvFilter;
 
 use gui_api::{
@@ -37,9 +38,38 @@ async fn main() {
     // Run it
     let addr = SocketAddr::from((args.host, args.port));
     tracing::info!("listening on {addr}");
-    let server = axum::Server::bind(&addr).serve(app(pg_pool.clone()).into_make_service());
+    let server = axum::Server::bind(&addr)
+        .serve(app(pg_pool.clone())
+        .into_make_service())
+        .with_graceful_shutdown(shutdown_signal());
 
     if let Err(err) = server.await {
         tracing::error!("server error: {:?}", err);
     }
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("signal received, starting graceful shutdown");
 }
