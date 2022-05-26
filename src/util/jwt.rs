@@ -16,7 +16,7 @@ pub(crate) struct Claims {
 impl Claims {
     pub(crate) fn new(id: Uuid) -> Self {
         let iat = OffsetDateTime::now_utc();
-        let exp = iat + Duration::from_secs(24 * 60 * 60);
+        let exp = iat + Duration::from_secs(2 * 7 * 24 * 60 * 60);
 
         Self {
             sub: id,
