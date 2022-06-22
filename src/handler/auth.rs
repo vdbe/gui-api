@@ -4,6 +4,7 @@ use axum::{
     routing::{get, patch, post},
     Json, Router,
 };
+use uuid::Uuid;
 
 use crate::{
     config::{constant::BEARER, db::postgres::PgPool},
@@ -35,7 +36,7 @@ pub(crate) async fn authorize(user: User) -> ApiResult<Json<User>> {
     Ok(Json(user))
 }
 
-pub(crate) async fn claims(claims: Claims) -> ApiResult<Json<Claims>> {
+pub(crate) async fn claims(claims: Claims<Uuid>) -> ApiResult<Json<Claims<Uuid>>> {
     Ok(Json(claims))
 }
 

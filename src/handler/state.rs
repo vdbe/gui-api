@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use uuid::Uuid;
+
 use axum::{
     extract::{Extension, Path, Query},
     http::StatusCode,
@@ -25,7 +27,7 @@ pub(crate) fn routes() -> Router {
         .route("/:identifier", get(find_by).patch(update))
 }
 pub(crate) async fn create(
-    _: Claims,
+    _: Claims<Uuid>,
     Json(input): Json<CreateStateInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<(StatusCode, Json<State>)> {
@@ -35,7 +37,7 @@ pub(crate) async fn create(
 }
 
 pub(crate) async fn list(
-    _: Claims,
+    _: Claims<Uuid>,
     Query(params): Query<HashMap<String, String>>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<Vec<State>>> {
@@ -49,11 +51,11 @@ pub(crate) async fn list(
         }
     }
 
-    return Ok(Json(StateService::list(&pool).await?));
+    Ok(Json(StateService::list(&pool).await?))
 }
 
 pub(crate) async fn find_by(
-    _: Claims,
+    _: Claims<Uuid>,
     Path(identifier): Path<IdentifierPath>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<State>> {
@@ -66,7 +68,7 @@ pub(crate) async fn find_by(
 }
 
 pub(crate) async fn update(
-    _: Claims,
+    _: Claims<Uuid>,
     Path(identifier): Path<IdentifierPath>,
     Json(input): Json<UpdateStateData>,
     Extension(pool): Extension<PgPool>,

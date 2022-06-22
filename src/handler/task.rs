@@ -6,6 +6,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
@@ -28,7 +29,7 @@ pub(crate) fn routes() -> Router {
 }
 
 pub(crate) async fn create(
-    claims: Claims,
+    claims: Claims<Uuid>,
     Json(input): Json<CreateInput>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<(StatusCode, Json<TaskOutput>)> {
@@ -38,7 +39,7 @@ pub(crate) async fn create(
 }
 
 pub(crate) async fn list(
-    _: Claims,
+    _: Claims<Uuid>,
     Query(params): Query<HashMap<String, String>>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<Vec<TaskOutput>>> {
@@ -71,7 +72,7 @@ pub(crate) async fn list(
 }
 
 pub(crate) async fn find_by(
-    _: Claims,
+    _: Claims<Uuid>,
     Path(identifier): Path<IdentifierPath>,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<TaskOutput>> {
@@ -84,7 +85,7 @@ pub(crate) async fn find_by(
 }
 
 pub(crate) async fn update(
-    claims: Claims,
+    claims: Claims<Uuid>,
     Path(identifier): Path<IdentifierPath>,
     Json(input): Json<UpdateTaskInput>,
     Extension(pool): Extension<PgPool>,
@@ -103,7 +104,7 @@ pub(crate) async fn update(
 }
 
 pub(crate) async fn state(
-    _: Claims,
+    _: Claims<Uuid>,
     task: Task,
     Extension(pool): Extension<PgPool>,
 ) -> ApiResult<Json<State>> {
@@ -111,7 +112,7 @@ pub(crate) async fn state(
 }
 
 pub(crate) async fn update_state(
-    claims: Claims,
+    claims: Claims<Uuid>,
     task: Task,
     Json(input): Json<PostStateIdentifier>,
     Extension(pool): Extension<PgPool>,

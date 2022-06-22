@@ -3,6 +3,8 @@ use axum::{
     extract::{Extension, FromRequest, Path, RequestParts, TypedHeader},
 };
 use headers::{authorization::Bearer, Authorization};
+use serde::de::DeserializeOwned;
+use uuid::Uuid;
 
 use crate::{
     config::db::postgres::PgPool,
@@ -27,7 +29,7 @@ where
         let Extension(pool) = Extension::<PgPool>::from_request(req)
             .await
             .map_err(Error::from)?;
-        let claims = jwt::verify(bearer.token())?;
+        let claims: Claims<Uuid> = jwt::verify(bearer.token())?;
         Ok(User::find_by_id(claims.sub, &pool).await?)
     }
 }
@@ -55,9 +57,10 @@ where
 }
 
 #[async_trait]
-impl<B> FromRequest<B> for Claims
+impl<B, T> FromRequest<B> for Claims<T>
 where
     B: Send,
+    T: DeserializeOwned
 {
     type Rejection = ApiError;
 
@@ -66,7 +69,7 @@ where
             TypedHeader::<Authorization<Bearer>>::from_request(req)
                 .await
                 .map_err(|err| Error::MissingBearer(err))?;
-        let claims = jwt::verify(bearer.token())?;
+        let claims: Claims<T> = jwt::verify(bearer.token())?;
         Ok(claims)
     }
 }
